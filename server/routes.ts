@@ -157,6 +157,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get device logs
+  router.get("/devices/:id/logs", async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      
+      // Xác thực và kiểm tra thiết bị
+      const device = await storage.getDevice(deviceId);
+      if (!device) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Không tìm thấy thiết bị" 
+        });
+      }
+      
+      // Xử lý các tham số truy vấn để lọc logs
+      const options: {
+        topics?: string[];
+        limit?: number;
+        timeFrom?: string;
+        timeTo?: string;
+        dateFrom?: string;
+        dateTo?: string;
+      } = {};
+      
+      // Xử lý limit (giới hạn số lượng bản ghi)
+      if (req.query.limit) {
+        options.limit = parseInt(req.query.limit as string);
+      } else {
+        options.limit = 100; // Giới hạn mặc định
+      }
+      
+      // Xử lý topics (chủ đề logs)
+      if (req.query.topics) {
+        if (Array.isArray(req.query.topics)) {
+          options.topics = req.query.topics as string[];
+        } else {
+          options.topics = (req.query.topics as string).split(',');
+        }
+      }
+      
+      // Xử lý các tham số thời gian
+      if (req.query.timeFrom) options.timeFrom = req.query.timeFrom as string;
+      if (req.query.timeTo) options.timeTo = req.query.timeTo as string;
+      if (req.query.dateFrom) options.dateFrom = req.query.dateFrom as string;
+      if (req.query.dateTo) options.dateTo = req.query.dateTo as string;
+      
+      // Lấy logs từ MikroTik service
+      const result = await mikrotikService.getDeviceLogs(deviceId, options);
+      
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Lỗi khi lấy logs từ thiết bị:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: `Lỗi khi lấy logs: ${error instanceof Error ? error.message : String(error)}` 
+      });
+    }
+  });
+
   // Interface routes
   router.get("/devices/:id/interfaces", async (req: Request, res: Response) => {
     try {

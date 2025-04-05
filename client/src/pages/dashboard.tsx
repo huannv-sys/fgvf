@@ -12,6 +12,7 @@ import InterfaceTable from "@/components/dashboard/InterfaceTable";
 import DeviceInfo from "@/components/dashboard/DeviceInfo";
 import ActiveAlerts from "@/components/dashboard/ActiveAlerts";
 import SystemMetrics from "@/components/dashboard/SystemMetrics";
+import DeviceLogs from "@/components/dashboard/DeviceLogs";
 // import DeviceInfoTest from "@/components/dashboard/DeviceInfoTest"; // Đã ẩn component này
 
 // Chế độ xem dashboard
@@ -205,6 +206,9 @@ const Dashboard = () => {
             <ActiveAlerts deviceId={selectedDeviceId} />
             <DeviceInfo deviceId={selectedDeviceId} />
           </div>
+          
+          {/* Device Logs */}
+          <DeviceLogs deviceId={selectedDeviceId} />
         </>
       ) : (
         /* Multi Device View - Xem nhiều thiết bị cùng lúc */

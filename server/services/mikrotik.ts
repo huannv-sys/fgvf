@@ -193,6 +193,50 @@ class MikrotikClient {
       throw error;
     }
   }
+
+  /**
+   * Lấy log từ thiết bị RouterOS
+   * @param options Các tùy chọn để lọc log (topics, limit, time, etc.)
+   * @returns Danh sách các bản ghi log
+   */
+  async getLogs(options: {
+    topics?: string[];    // Các topics cần lọc (system, firewall, dhcp, etc.)
+    limit?: number;       // Số lượng bản ghi tối đa
+    timeFrom?: string;    // Thời gian bắt đầu (định dạng: HH:MM:SS)
+    timeTo?: string;      // Thời gian kết thúc
+    dateFrom?: string;    // Ngày bắt đầu (định dạng: MM/DD/YYYY)
+    dateTo?: string;      // Ngày kết thúc
+  } = {}): Promise<any[]> {
+    try {
+      const { topics = [], limit = 100, timeFrom, timeTo, dateFrom, dateTo } = options;
+      
+      // Xây dựng tham số truy vấn
+      const params: any = {};
+      
+      if (limit) params.limit = limit.toString();
+      if (timeFrom) params['time-from'] = timeFrom;
+      if (timeTo) params['time-to'] = timeTo;
+      if (dateFrom) params['date-from'] = dateFrom;
+      if (dateTo) params['date-to'] = dateTo;
+      
+      // Lấy log từ thiết bị
+      let logs = await this.executeCommand('/log/print', [params]);
+      
+      // Lọc theo topics nếu được chỉ định
+      if (topics.length > 0) {
+        logs = logs.filter((log: any) => {
+          if (!log.topics) return false;
+          const logTopics = String(log.topics).split(',').map((t: string) => t.trim().toLowerCase());
+          return topics.some(topic => logTopics.includes(topic.toLowerCase()));
+        });
+      }
+      
+      return logs;
+    } catch (error) {
+      console.error(`Failed to get logs from device:`, error);
+      throw new Error(`Không thể lấy logs từ thiết bị: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }
 
 // Thêm import cho module net để kiểm tra kết nối TCP
@@ -206,6 +250,61 @@ export class MikrotikService {
    */
   getClientForDevice(deviceId: number): MikrotikClient | undefined {
     return this.clients.get(deviceId);
+  }
+  
+  /**
+   * Lấy logs từ thiết bị MikroTik
+   * @param deviceId ID của thiết bị 
+   * @param options Tùy chọn lọc log (topics, limit, time range)
+   */
+  async getDeviceLogs(
+    deviceId: number, 
+    options: {
+      topics?: string[];
+      limit?: number;
+      timeFrom?: string;
+      timeTo?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    } = {}
+  ): Promise<{ success: boolean; data?: any[]; message: string }> {
+    try {
+      // Kết nối đến thiết bị nếu chưa có kết nối
+      let client = this.clients.get(deviceId);
+      if (!client) {
+        console.log(`No existing connection to device ${deviceId}, connecting...`);
+        const connected = await this.connectToDevice(deviceId);
+        if (!connected) {
+          return {
+            success: false,
+            message: `Không thể kết nối đến thiết bị ID: ${deviceId}`
+          };
+        }
+        client = this.clients.get(deviceId);
+      }
+      
+      if (!client) {
+        return {
+          success: false,
+          message: `Không thể tạo kết nối đến thiết bị ID: ${deviceId}`
+        };
+      }
+      
+      // Lấy logs từ thiết bị
+      const logs = await client.getLogs(options);
+      
+      return {
+        success: true,
+        data: logs,
+        message: `Đã lấy ${logs.length} bản ghi log từ thiết bị`
+      };
+    } catch (error) {
+      console.error(`Error getting logs from device ${deviceId}:`, error);
+      return {
+        success: false,
+        message: `Lỗi khi lấy logs: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
   }
   
   /**
