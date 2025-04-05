@@ -82,67 +82,58 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg shadow-md">
-      <div className="p-3 border-b border-gray-800 flex items-center">
-        <h3 className="text-sm font-medium text-gray-200 mr-2">Interfaces</h3>
-        <span className="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+    <div className="bg-slate-900 rounded-lg shadow-md border border-slate-700">
+      <div className="px-4 py-3 border-b border-slate-700 bg-slate-800 flex items-center justify-between">
+        <h3 className="font-medium text-white text-lg">Network Interfaces</h3>
+        <div className="flex items-center">
+          <span className="text-xs text-slate-400">{displayInterfaces.length} interfaces</span>
+          <span className="inline-flex h-2 w-2 rounded-full bg-green-500 ml-2"></span>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <Table>
-          <TableHeader className="bg-gray-800">
-            <TableRow className="border-b-0">
-              <TableHead className="text-gray-300 font-medium text-xs">Type of Interface</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">Name</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">Status link/state</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">Link down count</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">MAC</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">Rate</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">MTU</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">RX Sum</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">TX Sum</TableHead>
-              <TableHead className="text-gray-300 font-medium text-xs">Comment</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayInterfaces.map((iface) => (
-              <TableRow key={iface.id} className="border-b border-gray-800">
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {iface.type}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {iface.name}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  <div className={`w-full py-1 px-4 text-center text-white text-xs rounded ${iface.status === 'up' ? 'bg-green-600' : 'bg-red-600'}`}>
-                    {iface.status === 'up' ? 'UP' : 'DOWN'}
-                  </div>
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  0
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {iface.macAddress}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {iface.speed}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {1500}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {formatBytes(iface.rxBytes || 0)}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {formatBytes(iface.txBytes || 0)}
-                </TableCell>
-                <TableCell className="text-gray-300 text-xs py-2">
-                  {iface.comment || ''}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <table className="w-full text-left">
+          <thead className="bg-slate-800 border-b border-slate-700">
+            <tr>
+              <th className="text-xs text-slate-400 font-semibold p-2">Type</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">Name</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">Status</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">MAC</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">Speed</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">MTU</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">RX</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">TX</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayInterfaces.length > 0 ? (
+              displayInterfaces.map((iface) => (
+                <tr key={iface.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+                  <td className="text-slate-300 text-xs p-2 whitespace-nowrap">{iface.type}</td>
+                  <td className="text-slate-300 text-xs p-2 font-medium whitespace-nowrap">{iface.name}</td>
+                  <td className="p-2">
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${iface.status === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {iface.status === 'up' ? 'UP' : 'DOWN'}
+                    </span>
+                  </td>
+                  <td className="text-slate-300 text-xs p-2 font-mono">{iface.macAddress || '-'}</td>
+                  <td className="text-slate-300 text-xs p-2">{iface.speed || '-'}</td>
+                  <td className="text-slate-300 text-xs p-2">1500</td>
+                  <td className="text-slate-300 text-xs p-2">{formatBytes(iface.rxBytes || 0)}</td>
+                  <td className="text-slate-300 text-xs p-2">{formatBytes(iface.txBytes || 0)}</td>
+                  <td className="text-slate-300 text-xs p-2 max-w-[200px] truncate">{iface.comment || '-'}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="text-center p-4 text-slate-400">
+                  Không có interfaces nào được tìm thấy
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
