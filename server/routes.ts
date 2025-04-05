@@ -17,6 +17,7 @@ import * as discoveryService from "./services/discovery";
 import * as deviceIdentificationService from "./services/device-identification";
 import * as deviceClassifierService from "./services/device-classifier";
 import { interfaceHealthService } from "./services/interface_health";
+import { initLogAnalyzerService, getLogAnalyzerService } from './services/log-analyzer';
 import { 
   insertDeviceSchema, 
   insertAlertSchema,
@@ -32,6 +33,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Start the scheduler service once the server starts
   schedulerService.initialize();
+  
+  // Khởi tạo dịch vụ phân tích logs
+  const logAnalyzerService = initLogAnalyzerService(mikrotikService);
 
   // Device routes
   router.get("/devices", async (req: Request, res: Response) => {
@@ -1294,6 +1298,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Log phân tích traffic - Thêm prefix API
+  router.post("/analyze-traffic/:id", async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      const device = await storage.getDevice(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Không tìm thấy thiết bị" 
+        });
+      }
+      
+      // Xử lý các tham số cho phân tích
+      const options: {
+        timeRange?: 'hour' | 'day' | 'week' | 'month';
+        startDate?: Date;
+        endDate?: Date;
+        maxEntries?: number;
+        includeDetails?: boolean;
+      } = req.body.options || {};
+      
+      // Chuyển đổi các chuỗi ngày thành đối tượng Date nếu có
+      if (options.startDate) {
+        options.startDate = new Date(options.startDate);
+      }
+      
+      if (options.endDate) {
+        options.endDate = new Date(options.endDate);
+      }
+      
+      // Lấy kết quả phân tích từ log analyzer service
+      const logAnalyzerService = getLogAnalyzerService();
+      const result = await logAnalyzerService.analyzeTrafficLogs(deviceId, options);
+      
+      res.json({
+        success: true,
+        deviceId,
+        deviceName: device.name,
+        analysisTime: new Date(),
+        results: result
+      });
+    } catch (error) {
+      console.error("Lỗi khi phân tích traffic logs:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: `Lỗi khi phân tích traffic logs: ${error instanceof Error ? error.message : String(error)}` 
+      });
+    }
+  });
+
+  // Tuyến đường API trực tiếp (không qua router)
+  app.get('/apitest', (req, res) => {
+    res.json({ message: 'API Test Working' });
+  });
+  
   app.use("/api", router);
 
   const httpServer = createServer(app);

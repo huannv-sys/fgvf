@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Metric, Interface } from "@shared/schema";
+import axios from "axios";
 import { 
   AreaChart, 
   Area, 
@@ -13,17 +14,23 @@ import {
   BarChart,
   Bar,
   LineChart,
-  Line
+  Line,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { 
   ArrowDownIcon, 
   ArrowUpIcon, 
   RefreshCwIcon, 
   ActivityIcon,
-  WifiIcon
+  WifiIcon,
+  PieChartIcon,
+  BarChartIcon
 } from "lucide-react";
 
 interface NetworkTrafficAdvancedProps {
@@ -66,6 +73,9 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   const [activeTab, setActiveTab] = useState<string>("graph");
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>("realtime");
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [logAnalysisData, setLogAnalysisData] = useState<any>(null);
+  const [isLoadingLogAnalysis, setIsLoadingLogAnalysis] = useState<boolean>(false);
+  const [logAnalysisError, setLogAnalysisError] = useState<string | null>(null);
   
   // Fetch metrics data với kiểm tra quá trình gọi
   const metricsEndpoint = deviceId ? `/api/devices/${deviceId}/metrics` : 'empty';
@@ -95,9 +105,40 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
     refetchInterval: autoRefresh ? 5000 : false
   });
   
+  // Function to perform traffic log analysis
+  const analyzeTrafficLogs = async () => {
+    if (!deviceId) return;
+    
+    setIsLoadingLogAnalysis(true);
+    setLogAnalysisError(null);
+    
+    try {
+      // Call to the new API endpoint
+      const response = await axios.post(`/api/analyze-traffic/${deviceId}`, {
+        options: {
+          timeRange: selectedTimeFrame === "realtime" ? "day" : selectedTimeFrame
+        }
+      });
+      
+      console.log("Log analysis response:", response.data);
+      setLogAnalysisData(response.data);
+    } catch (error) {
+      console.error("Error analyzing traffic logs:", error);
+      setLogAnalysisError(
+        error.response?.data?.message || 
+        "Lỗi khi phân tích log lưu lượng mạng. Vui lòng thử lại sau."
+      );
+    } finally {
+      setIsLoadingLogAnalysis(false);
+    }
+  };
+  
   // Refresh data manually
   const handleRefresh = () => {
     refetchMetrics();
+    if (activeTab === "analysis") {
+      analyzeTrafficLogs();
+    }
   };
   
   // Format traffic data for the chart with improved calculations
@@ -420,6 +461,13 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   const currentStats = getCurrentTrafficStats();
   const totalBandwidth = calculateTotalBandwidthUsed();
   
+  // Effect to load log analysis data when tab changes to "analysis"
+  useEffect(() => {
+    if (activeTab === "analysis" && deviceId && !logAnalysisData && !isLoadingLogAnalysis) {
+      analyzeTrafficLogs();
+    }
+  }, [activeTab, deviceId, logAnalysisData, isLoadingLogAnalysis]);
+  
   if (isLoadingMetrics || isLoadingInterfaces) {
     return (
       <div className="bg-gray-900 rounded-lg p-4 shadow-md flex items-center justify-center h-[600px]">
@@ -453,7 +501,196 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   
   // Render the appropriate content based on the active tab
   const renderContent = () => {
-    if (activeTab === "graph") {
+    if (activeTab === "analysis") {
+      return (
+        <div className="p-4">
+          {isLoadingLogAnalysis ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : logAnalysisError ? (
+            <div className="bg-slate-950 rounded-lg p-4 shadow-md flex flex-col items-center justify-center h-[400px]">
+              <p className="text-red-400 mb-4">{logAnalysisError}</p>
+              <Button 
+                onClick={analyzeTrafficLogs}
+                className="flex items-center"
+                size="sm"
+              >
+                <RefreshCwIcon className="h-4 w-4 mr-2" />
+                Thử lại phân tích
+              </Button>
+            </div>
+          ) : !logAnalysisData ? (
+            <div className="bg-slate-950 rounded-lg p-4 shadow-md flex flex-col items-center justify-center h-[400px]">
+              <p className="text-gray-400 mb-4">Chưa có dữ liệu phân tích. Nhấn nút bên dưới để bắt đầu phân tích log lưu lượng.</p>
+              <Button 
+                onClick={analyzeTrafficLogs}
+                className="flex items-center"
+                size="sm"
+              >
+                <BarChartIcon className="h-4 w-4 mr-2" />
+                Phân tích log lưu lượng
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Thông tin tổng quan */}
+              <Card className="border-none bg-slate-950">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium">Thông tin phân tích lưu lượng</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-900 rounded-md p-3">
+                      <div className="text-xs text-gray-400 mb-1">Tổng số gói tin</div>
+                      <div className="text-blue-400 font-mono font-medium text-lg">
+                        {logAnalysisData?.totalPackets?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="bg-slate-900 rounded-md p-3">
+                      <div className="text-xs text-gray-400 mb-1">Tổng băng thông</div>
+                      <div className="text-green-400 font-mono font-medium text-lg">
+                        {logAnalysisData?.totalBandwidth || "0 GB"}
+                      </div>
+                    </div>
+                    <div className="bg-slate-900 rounded-md p-3">
+                      <div className="text-xs text-gray-400 mb-1">Thời gian ghi nhận</div>
+                      <div className="text-orange-400 font-mono font-medium text-lg">
+                        {logAnalysisData?.timeRange || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Phân tích theo giao thức */}
+              {logAnalysisData?.protocolDistribution && (
+                <Card className="border-none bg-slate-950">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-medium">Phân tích giao thức</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(logAnalysisData.protocolDistribution).map(([name, value]) => ({ 
+                              name, 
+                              value: typeof value === 'number' ? value : 0 
+                            }))}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {Object.entries(logAnalysisData.protocolDistribution).map(([name, value], index) => (
+                              <Cell key={`cell-${index}`} fill={`hsl(${index * 45 % 360}, 70%, 50%)`} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Top IP addresses */}
+              {logAnalysisData?.topSources && (
+                <Card className="border-none bg-slate-950">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-medium">Top nguồn lưu lượng</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(logAnalysisData.topSources).map(([ip, bytes]) => ({
+                            ip,
+                            bytes: typeof bytes === 'number' ? bytes : 0,
+                            displayBytes: typeof bytes === 'number' 
+                              ? bytes > 1024*1024*1024 
+                                ? `${(bytes/(1024*1024*1024)).toFixed(2)} GB` 
+                                : bytes > 1024*1024 
+                                  ? `${(bytes/(1024*1024)).toFixed(2)} MB` 
+                                  : `${(bytes/1024).toFixed(2)} KB`
+                              : '0 KB'
+                          })).slice(0, 10)}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                          <XAxis 
+                            dataKey="ip" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={60}
+                            tick={{ fontSize: 10, fill: '#aaa' }}
+                          />
+                          <YAxis 
+                            tickFormatter={(value) => 
+                              value > 1024*1024*1024 
+                                ? `${(value/(1024*1024*1024)).toFixed(1)}GB` 
+                                : value > 1024*1024 
+                                  ? `${(value/(1024*1024)).toFixed(1)}MB` 
+                                  : `${(value/1024).toFixed(1)}KB`
+                            }
+                            tick={{ fontSize: 10, fill: '#aaa' }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              value > 1024*1024*1024 
+                                ? `${(value/(1024*1024*1024)).toFixed(2)} GB` 
+                                : value > 1024*1024 
+                                  ? `${(value/(1024*1024)).toFixed(2)} MB` 
+                                  : `${(value/1024).toFixed(2)} KB`,
+                              'Lưu lượng'
+                            ]}
+                            labelFormatter={(label) => `IP: ${label}`}
+                            contentStyle={{ backgroundColor: '#333', border: 'none' }}
+                          />
+                          <Bar 
+                            dataKey="bytes" 
+                            fill="#4CAF50" 
+                            name="Lưu lượng"
+                            label={{ 
+                              position: 'top', 
+                              formatter: (value) => 
+                                value > 1024*1024*1024 
+                                  ? `${(value/(1024*1024*1024)).toFixed(1)}GB` 
+                                  : value > 1024*1024 
+                                    ? `${(value/(1024*1024)).toFixed(1)}MB` 
+                                    : `${(value/1024).toFixed(1)}KB`,
+                              fontSize: 10,
+                              fill: '#aaa'
+                            }} 
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={analyzeTrafficLogs}
+                  size="sm"
+                  className="flex items-center"
+                >
+                  <RefreshCwIcon className="h-4 w-4 mr-2" />
+                  Cập nhật phân tích
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else if (activeTab === "graph") {
       return (
         <>
           <div className="p-3 h-[280px]">
@@ -795,6 +1032,16 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
             onClick={() => setActiveTab("details")}
           >
             Details
+          </button>
+          <button
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 h-7 text-xs ${
+              activeTab === "analysis" 
+              ? "bg-gray-700 text-gray-200" 
+              : "hover:bg-gray-700/50 hover:text-gray-300"
+            }`}
+            onClick={() => setActiveTab("analysis")}
+          >
+            Analysis
           </button>
         </div>
       </div>
