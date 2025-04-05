@@ -195,6 +195,9 @@ class MikrotikClient {
   }
 }
 
+// Thêm import cho module net để kiểm tra kết nối TCP
+import * as net from 'net';
+
 export class MikrotikService {
   private clients: Map<number, MikrotikClient> = new Map();
   
@@ -203,6 +206,69 @@ export class MikrotikService {
    */
   getClientForDevice(deviceId: number): MikrotikClient | undefined {
     return this.clients.get(deviceId);
+  }
+  
+  /**
+   * Kiểm tra xem thiết bị MikroTik có trực tuyến hay không bằng cách thử kết nối TCP đến các cổng phổ biến
+   * @param ipAddress Địa chỉ IP của thiết bị
+   * @returns True nếu thiết bị trực tuyến, ngược lại là False
+   */
+  async checkDeviceOnline(ipAddress: string): Promise<boolean> {
+    try {
+      // Các cổng phổ biến được sử dụng bởi thiết bị MikroTik
+      const commonMikrotikPorts = [8728, 8729, 80, 443, 22, 8291];
+      
+      // Thử kết nối đến từng cổng
+      for (const port of commonMikrotikPorts) {
+        try {
+          console.log(`Kiểm tra kết nối đến ${ipAddress}:${port}...`);
+          
+          // Sử dụng Promise để kiểm tra kết nối với timeout
+          const isConnected = await new Promise<boolean>((resolve) => {
+            const socket = net.createConnection({
+              host: ipAddress,
+              port: port,
+              timeout: 1000  // 1 giây timeout
+            });
+            
+            // Đặt timeout cho kết nối
+            const timeout = setTimeout(() => {
+              socket.destroy();
+              resolve(false);
+            }, 1000);
+            
+            // Xử lý khi kết nối thành công
+            socket.on('connect', () => {
+              clearTimeout(timeout);
+              socket.destroy();
+              console.log(`Kết nối thành công đến ${ipAddress}:${port}`);
+              resolve(true);
+            });
+            
+            // Xử lý khi có lỗi kết nối
+            socket.on('error', (err) => {
+              clearTimeout(timeout);
+              socket.destroy();
+              console.log(`Không thể kết nối đến ${ipAddress}:${port}: ${err.message}`);
+              resolve(false);
+            });
+          });
+          
+          if (isConnected) {
+            return true;
+          }
+        } catch (error) {
+          console.log(`Lỗi khi thử kết nối đến ${ipAddress}:${port}: ${error}`);
+          continue;
+        }
+      }
+      
+      console.log(`Không thể kết nối đến thiết bị ${ipAddress} trên bất kỳ cổng nào.`);
+      return false;
+    } catch (error) {
+      console.error(`Lỗi khi kiểm tra thiết bị ${ipAddress} có trực tuyến hay không:`, error);
+      return false;
+    }
   }
   
   /**
@@ -1374,15 +1440,22 @@ export async function getMikrotikDevice(deviceId: number): Promise<any> {
  * Lấy danh sách các thiết bị láng giềng của một thiết bị MikroTik
  * (bao gồm các thiết bị từ ARP table và DHCP leases)
  */
-export async function getNetworkNeighbors(device: any): Promise<any[]> {
+export async function getNetworkNeighbors(deviceId: number): Promise<any[]> {
   try {
+    // Lấy thông tin thiết bị
+    const device = await getMikrotikDevice(deviceId);
+    if (!device) {
+      console.error(`Cannot find device with ID ${deviceId}`);
+      return [];
+    }
+    
     const neighbors: any[] = [];
     const macAddresses = new Set<string>();
     
     // Lấy bản ghi ARP
-    console.log(`Lấy ARP entries từ thiết bị ${device.id || 'unknown'} (${device.ipAddress})`);
-    const arpEntries = await getArpTable(device);
-    console.log(`Lấy được ${arpEntries.length} ARP entries từ thiết bị ${device.id || 'unknown'}`);
+    console.log(`Lấy ARP entries từ thiết bị ${deviceId} (${device.ipAddress})`);
+    const arpEntries = await getArpTable(deviceId);
+    console.log(`Lấy được ${arpEntries.length} ARP entries từ thiết bị ${deviceId}`);
     
     // In ra thông tin chi tiết nếu có
     if (arpEntries.length > 0) {
@@ -1397,15 +1470,15 @@ export async function getNetworkNeighbors(device: any): Promise<any[]> {
           macAddress: entry.macAddress,
           interface: entry.interface,
           source: 'arp',
-          deviceId: device.id
+          deviceId: deviceId
         });
       }
     }
     
     // Lấy DHCP leases
-    console.log(`Lấy DHCP leases từ thiết bị ${device.id || 'unknown'} (${device.ipAddress})`);
-    const dhcpLeases = await getDhcpLeasesFromDevice(device);
-    console.log(`Lấy được ${dhcpLeases.length} DHCP leases từ thiết bị ${device.id || 'unknown'}`);
+    console.log(`Lấy DHCP leases từ thiết bị ${deviceId} (${device.ipAddress})`);
+    const dhcpLeases = await getDhcpLeases(deviceId);
+    console.log(`Lấy được ${dhcpLeases.length} DHCP leases từ thiết bị ${deviceId}`);
     
     // In ra thông tin chi tiết nếu có
     if (dhcpLeases.length > 0) {
@@ -1420,15 +1493,15 @@ export async function getNetworkNeighbors(device: any): Promise<any[]> {
           macAddress: lease.macAddress,
           hostName: lease.hostName,
           source: 'dhcp',
-          deviceId: device.id
+          deviceId: deviceId
         });
       }
     }
     
-    console.log(`Tổng cộng phát hiện ${neighbors.length} thiết bị láng giềng từ thiết bị ${device.id || 'unknown'}`);
+    console.log(`Tổng cộng phát hiện ${neighbors.length} thiết bị láng giềng từ thiết bị ${deviceId}`);
     return neighbors;
   } catch (error) {
-    console.error(`Error getting network neighbors for device ${device.id}:`, error);
+    console.error(`Error getting network neighbors for device ${deviceId}:`, error);
     return [];
   }
 }
@@ -1533,62 +1606,52 @@ export async function getDhcpLeases(deviceId: number): Promise<DhcpLease[]> {
 /**
  * Lấy danh sách DHCP leases từ thiết bị MikroTik (phiên bản cũ)
  */
-export async function getDhcpLeasesFromDevice(device: any) {
+export async function getDhcpLeasesFromDevice(deviceId: number) {
   try {
-    const client = new MikrotikClient(device.ipAddress, device.username, device.password);
-    const connected = await client.connect();
-    if (!connected) {
-      throw new Error('Could not connect to MikroTik device');
-    }
-    
-    const leases = await client.executeCommand('/ip/dhcp-server/lease/print');
-    await client.disconnect();
-    
-    return leases.map((lease: any) => ({
-      id: lease['.id'],
-      address: lease['address'],
-      macAddress: lease['mac-address'],
-      clientId: lease['client-id'],
-      hostName: lease['host-name'],
-      comment: lease['comment'],
-      status: lease['status'],
-      server: lease['server'],
-      disabled: lease['disabled'] === 'true',
-      dynamic: lease['dynamic'] === 'true',
-      blocked: lease['blocked'] === 'true',
-      lastSeen: new Date()
-    }));
+    // Sử dụng lại hàm getDhcpLeases đã được chuẩn hóa
+    return await getDhcpLeases(deviceId);
   } catch (error) {
-    console.error(`Error getting DHCP leases from device ${device.id}:`, error);
+    console.error(`Error getting DHCP leases from device ${deviceId}:`, error);
     return [];
   }
 }
 
 // Lấy danh sách ARP từ thiết bị MikroTik
-export async function getArpTable(device: any) {
+export async function getArpTable(deviceId: number) {
   try {
-    const client = new MikrotikClient(device.ipAddress, device.username, device.password);
-    const connected = await client.connect();
+    const mikrotikService = new MikrotikService();
+    
+    // Kết nối đến thiết bị
+    let connected = await mikrotikService.connectToDevice(deviceId);
     if (!connected) {
-      throw new Error('Could not connect to MikroTik device');
+      console.error(`Could not connect to device ${deviceId}`);
+      return [];
     }
     
-    const arpEntries = await client.executeCommand('/ip/arp/print');
-    await client.disconnect();
+    // Gửi lệnh để lấy bảng ARP
+    const arpEntries = await mikrotikService.sendCommand(deviceId, '/ip/arp/print');
+    
+    if (!Array.isArray(arpEntries)) {
+      console.error('Invalid ARP entries response format');
+      return [];
+    }
+    
+    console.log(`Found ${arpEntries.length} ARP entries for device ${deviceId}`);
     
     return arpEntries.map((entry: any) => ({
-      id: entry['.id'],
-      address: entry['address'],
-      macAddress: entry['mac-address'],
-      interface: entry['interface'],
-      complete: entry['complete'],
-      disabled: entry['disabled'],
-      dynamic: entry['dynamic'],
-      invalid: entry['invalid'],
-      lastSeen: new Date()
+      id: entry['.id'] || '',
+      address: entry['address'] || '',
+      macAddress: entry['mac-address'] || '',
+      interface: entry['interface'] || '',
+      complete: entry['complete'] === 'true',
+      disabled: entry['disabled'] === 'true',
+      dynamic: entry['dynamic'] === 'true',
+      invalid: entry['invalid'] === 'true',
+      lastSeen: new Date(),
+      deviceId: deviceId // Thêm deviceId để biết thiết bị nguồn
     }));
   } catch (error) {
-    console.error(`Error getting ARP table from device ${device.id}:`, error);
+    console.error(`Error getting ARP table from device ${deviceId}:`, error);
     return [];
   }
 }

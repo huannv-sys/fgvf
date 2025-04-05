@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import { cn } from "../../lib/utils";
 
 export interface ButtonProps
@@ -53,25 +53,23 @@ export const buttonVariants = ({
   return cn("btn", variantClass, sizeClass, className);
 };
 
-export function Button({
-  className,
-  variant = "primary",
-  size = "md",
-  children,
-  disabled,
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      className={cn(
-        buttonVariants({ variant, size }),
-        disabled && "disabled",
-        className
-      )}
-      disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "primary", size = "md", children, disabled, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={cn(
+          buttonVariants({ variant, size }),
+          disabled && "disabled",
+          className
+        )}
+        disabled={disabled}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+
+Button.displayName = "Button";

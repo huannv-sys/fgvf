@@ -354,10 +354,10 @@ export async function detectDevicesFromMikrotikDHCP(deviceId: number): Promise<N
     }
     
     // Lấy danh sách DHCP lease từ thiết bị
-    const leases = await mikrotik.getDhcpLeases(device);
+    const leases = await mikrotik.getDhcpLeases(device.id);
     
     // Lấy danh sách ARP từ thiết bị
-    const arpEntries = await mikrotik.getArpTable(device);
+    const arpEntries = await mikrotik.getArpTable(device.id);
     
     // Kết hợp thông tin từ cả hai nguồn
     const combinedDevices = await combineDeviceInfo(leases, arpEntries);

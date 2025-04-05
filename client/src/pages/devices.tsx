@@ -27,9 +27,9 @@ const DevicesPage = () => {
     password: "",
   });
   
-  // Lấy danh sách thiết bị
+  // Lấy danh sách thiết bị và kiểm tra trạng thái kết nối
   const { data: devices, isLoading, refetch: refetchDevices } = useQuery<Device[]>({ 
-    queryKey: ['/api/devices'],
+    queryKey: ['/api/devices?check=true'],
   });
   
   // Lấy trạng thái các thiết bị từ scheduler

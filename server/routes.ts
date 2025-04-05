@@ -37,8 +37,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.get("/devices", async (req: Request, res: Response) => {
     try {
       const devices = await storage.getAllDevices();
+      
+      // Kiểm tra trạng thái online của các thiết bị nếu có param check=true
+      if (req.query.check === 'true') {
+        console.log('Đang kiểm tra trạng thái online của các thiết bị...');
+        for (const device of devices) {
+          if (device.ipAddress) {
+            // Kiểm tra trạng thái online
+            const isOnline = await mikrotikService.checkDeviceOnline(device.ipAddress);
+            
+            // Nếu trạng thái khác với DB, cập nhật DB
+            if (device.isOnline !== isOnline) {
+              console.log(`Trạng thái thiết bị ${device.name} (${device.ipAddress}) đã thay đổi: ${device.isOnline} -> ${isOnline}`);
+              await storage.updateDevice(device.id, { 
+                isOnline,
+                lastSeen: isOnline ? new Date() : device.lastSeen
+              });
+              // Cập nhật đối tượng thiết bị để trả về cho client
+              device.isOnline = isOnline;
+            }
+          }
+        }
+      }
+      
       res.json(devices);
     } catch (error) {
+      console.error('Lỗi khi lấy danh sách thiết bị:', error);
       res.status(500).json({ message: "Failed to fetch devices" });
     }
   });

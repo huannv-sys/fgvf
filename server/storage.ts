@@ -103,7 +103,8 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Device operations
   async getAllDevices(): Promise<Device[]> {
-    return await db.select().from(devices);
+    const allDevices = await db.select().from(devices);
+    return allDevices;
   }
 
   async getDevice(id: number): Promise<Device | undefined> {
