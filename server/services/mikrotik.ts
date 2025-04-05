@@ -208,6 +208,7 @@ class MikrotikClient {
     dateTo?: string;      // Ngày kết thúc
   } = {}): Promise<any[]> {
     try {
+      console.log(`Fetching logs with options:`, JSON.stringify(options));
       const { topics = [], limit = 100, timeFrom, timeTo, dateFrom, dateTo } = options;
       
       // Xây dựng tham số truy vấn
@@ -218,17 +219,28 @@ class MikrotikClient {
       if (timeTo) params['time-to'] = timeTo;
       if (dateFrom) params['date-from'] = dateFrom;
       if (dateTo) params['date-to'] = dateTo;
+
+      console.log(`Executing command with params:`, JSON.stringify(params));
       
       // Lấy log từ thiết bị
       let logs = await this.executeCommand('/log/print', [params]);
+      console.log(`Retrieved ${logs?.length || 0} logs from device`);
       
       // Lọc theo topics nếu được chỉ định
       if (topics.length > 0) {
+        console.log(`Filtering logs by topics:`, topics);
         logs = logs.filter((log: any) => {
           if (!log.topics) return false;
           const logTopics = String(log.topics).split(',').map((t: string) => t.trim().toLowerCase());
           return topics.some(topic => logTopics.includes(topic.toLowerCase()));
         });
+        console.log(`After filtering by topics: ${logs.length} logs remaining`);
+      }
+      
+      if (logs.length > 0) {
+        console.log(`Sample log entry:`, JSON.stringify(logs[0]));
+      } else {
+        console.log(`No logs found with the specified filters`);
       }
       
       return logs;

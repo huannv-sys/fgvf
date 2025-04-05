@@ -1311,6 +1311,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      console.log("Received traffic analysis request for device:", deviceId);
+      console.log("Request body:", JSON.stringify(req.body));
+      
       // Xử lý các tham số cho phân tích
       const options: {
         timeRange?: 'hour' | 'day' | 'week' | 'month';
@@ -1319,6 +1322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxEntries?: number;
         includeDetails?: boolean;
       } = req.body.options || {};
+      
+      console.log("Extracted options:", JSON.stringify(options));
       
       // Chuyển đổi các chuỗi ngày thành đối tượng Date nếu có
       if (options.startDate) {

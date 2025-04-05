@@ -114,9 +114,23 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
     
     try {
       // Call to the new API endpoint
+      console.log("Calling analyze-traffic API with deviceId:", deviceId);
+      
+      // Fix: Đảm bảo timeRange phù hợp với định dạng backend cần
+      const timeRangeMap: {[key: string]: 'hour' | 'day' | 'week' | 'month'} = {
+        "realtime": "day",
+        "1h": "hour",
+        "6h": "day",
+        "24h": "day",
+        "7d": "week"
+      };
+      
+      const timeRange = timeRangeMap[selectedTimeFrame] || "day";
+      console.log("Using timeRange:", timeRange);
+      
       const response = await axios.post(`/api/analyze-traffic/${deviceId}`, {
         options: {
-          timeRange: selectedTimeFrame === "realtime" ? "day" : selectedTimeFrame
+          timeRange: timeRange
         }
       });
       
@@ -463,10 +477,24 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   
   // Effect to load log analysis data when tab changes to "analysis"
   useEffect(() => {
-    if (activeTab === "analysis" && deviceId && !logAnalysisData && !isLoadingLogAnalysis) {
+    if (activeTab === "analysis" && deviceId) {
       analyzeTrafficLogs();
     }
-  }, [activeTab, deviceId, logAnalysisData, isLoadingLogAnalysis]);
+  }, [activeTab, deviceId, selectedTimeFrame]);
+  
+  // Thiết lập cập nhật tự động cho tab phân tích lưu lượng
+  useEffect(() => {
+    if (activeTab === "analysis" && deviceId) {
+      // Tạo interval để cập nhật dữ liệu phân tích mỗi 30 giây
+      const intervalId = setInterval(() => {
+        console.log("Tự động cập nhật phân tích lưu lượng...");
+        analyzeTrafficLogs();
+      }, 30000); // 30 giây
+      
+      // Xóa interval khi component unmount hoặc tab thay đổi
+      return () => clearInterval(intervalId);
+    }
+  }, [activeTab, deviceId]);
   
   if (isLoadingMetrics || isLoadingInterfaces) {
     return (
