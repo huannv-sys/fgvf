@@ -44,72 +44,79 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ deviceId }) => {
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           </div>
         ) : deviceData ? (
-          <div className="grid grid-cols-1 gap-4">
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Model</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.model || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Serial Number</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.serialNumber || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">RouterOS Version</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.routerOsVersion || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Firmware</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.firmware || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">CPU</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.cpu || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Total Memory</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.totalMemory || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Storage</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.storage || 'Chưa có thông tin'}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Last Updated</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {formatLastSeen(deviceData.lastSeen)}
-              </div>
-            </div>
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Status</div>
-              <div className="w-2/3 text-sm font-medium flex items-center">
-                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${deviceData.isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                <span className={deviceData.isOnline ? 'text-green-400' : 'text-red-400'}>
+          <div>
+            {/* Phần hiển thị trạng thái đặt lên đầu (dòng 1) */}
+            <div className="flex items-center justify-between mb-4 p-2 border border-slate-700 bg-slate-900 rounded">
+              <div className="flex items-center">
+                <span className={`inline-block w-3 h-3 rounded-full mr-2 ${deviceData.isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                <span className={`font-medium ${deviceData.isOnline ? 'text-green-400' : 'text-red-400'}`}>
                   {deviceData.isOnline ? 'Online' : 'Offline'}
                 </span>
               </div>
-            </div>
-            {deviceData.uptime && (
-            <div className="flex">
-              <div className="w-1/3 text-sm text-slate-400">Uptime</div>
-              <div className="w-2/3 text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.uptime}
+              {deviceData.uptime && (
+                <div className="flex items-center text-sm">
+                  <span className="text-slate-400 mr-2">Uptime:</span>
+                  <span className="text-white">{deviceData.uptime}</span>
+                </div>
+              )}
+              <div className="flex items-center text-sm">
+                <span className="text-slate-400 mr-2">Last Updated:</span>
+                <span className="text-white">{formatLastSeen(deviceData.lastSeen)}</span>
               </div>
             </div>
-            )}
+            
+            {/* Thông tin thiết bị hiển thị theo grid (dạng ngang) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {/* Cột 1 */}
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">Model</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.model || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">Serial Number</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.serialNumber || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">RouterOS Version</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.routerOsVersion || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">Firmware</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.firmware || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">CPU</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.cpu || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">Total Memory</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.totalMemory || 'Chưa có thông tin'}
+                </div>
+              </div>
+              
+              <div className="p-2 border border-slate-700 bg-slate-900 rounded">
+                <div className="text-sm text-slate-400 mb-1">Storage</div>
+                <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
+                  {deviceData.storage || 'Chưa có thông tin'}
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="text-sm text-slate-400 text-center py-8">
