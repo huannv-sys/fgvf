@@ -1,0 +1,15 @@
+2023-10-05 08:23:45 src-ip=192.168.1.10 dst-ip=203.0.113.5 protocol=TCP src-port=54321 dst-port=443 bytes=1240
+2023-10-05 08:23:47 src-ip=192.168.1.15 dst-ip=198.51.100.2 protocol=UDP src-port=45678 dst-port=53 bytes=64
+2023-10-05 08:23:48 src-ip=203.0.113.5 dst-ip=192.168.1.10 protocol=TCP src-port=443 dst-port=54321 bytes=8540
+2023-10-05 08:23:50 src-ip=192.168.1.25 dst-ip=203.0.113.10 protocol=TCP src-port=49152 dst-port=80 bytes=780
+2023-10-05 08:24:01 src-ip=192.168.1.10 dst-ip=203.0.113.5 protocol=TCP src-port=54321 dst-port=443 bytes=920
+2023-10-05 08:24:05 src-ip=203.0.113.5 dst-ip=192.168.1.10 protocol=TCP src-port=443 dst-port=54321 bytes=7650
+2023-10-05 08:24:10 src-ip=192.168.1.15 dst-ip=198.51.100.2 protocol=UDP src-port=45679 dst-port=53 bytes=64
+2023-10-05 08:24:12 src-ip=198.51.100.2 dst-ip=192.168.1.15 protocol=UDP src-port=53 dst-port=45679 bytes=128
+2023-10-05 08:24:20 src-ip=203.0.113.10 dst-ip=192.168.1.25 protocol=TCP src-port=80 dst-port=49152 bytes=6500
+2023-10-05 08:24:30 src-ip=192.168.1.30 dst-ip=203.0.113.15 protocol=TCP src-port=33456 dst-port=22 bytes=340
+2023-10-05 08:24:32 src-ip=203.0.113.15 dst-ip=192.168.1.30 protocol=TCP src-port=22 dst-port=33456 bytes=420
+2023-10-05 08:24:45 src-ip=192.168.1.10 dst-ip=203.0.113.20 protocol=TCP src-port=54322 dst-port=8080 bytes=1500
+2023-10-05 08:24:49 src-ip=203.0.113.20 dst-ip=192.168.1.10 protocol=TCP src-port=8080 dst-port=54322 bytes=4200
+2023-10-05 08:25:00 src-ip=192.168.1.15 dst-ip=198.51.100.5 protocol=ICMP src-port=0 dst-port=0 bytes=84
+2023-10-05 08:25:01 src-ip=198.51.100.5 dst-ip=192.168.1.15 protocol=ICMP src-port=0 dst-port=0 bytes=84
