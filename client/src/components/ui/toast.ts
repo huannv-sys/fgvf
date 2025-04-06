@@ -1,2 +1,2 @@
-// Re-export useToast from use-toast.ts
+// Re-export useToast only
 export { useToast, toast } from './use-toast';
