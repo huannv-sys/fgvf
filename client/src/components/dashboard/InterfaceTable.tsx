@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Interface } from "@shared/schema";
 import { 
   Table, 
@@ -9,6 +9,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
 
 interface InterfaceTableProps {
   deviceId: number | null;
@@ -24,13 +27,56 @@ interface InterfaceData {
   rxBytes: number | null;
   txBytes: number | null;
   comment: string | null;
+  disabled: boolean;
 }
 
 const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   const { data: interfaces, isLoading } = useQuery<Interface[]>({
     queryKey: deviceId ? ['/api/devices', deviceId, 'interfaces'] : ['empty'],
     enabled: !!deviceId,
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  
+  // Mutation để bật/tắt interface
+  const toggleInterfaceMutation = useMutation({
+    mutationFn: async ({ interfaceId, enable }: { interfaceId: number; enable: boolean }) => {
+      const response = await fetch(`/api/interfaces/${interfaceId}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, enable })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Lỗi khi thay đổi trạng thái interface');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Hiển thị thông báo thành công
+      toast({
+        title: "Thành công",
+        description: data.message,
+        variant: "default",
+      });
+      
+      // Làm mới dữ liệu interface
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/devices', deviceId, 'interfaces'] });
+      }, 500);
+    },
+    onError: (error: Error) => {
+      // Hiển thị thông báo lỗi
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
 
   if (isLoading) {
@@ -65,7 +111,8 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
         speed: iface.speed || (isUp ? '1Gbps' : null),
         rxBytes: iface.rxBytes,
         txBytes: iface.txBytes,
-        comment: iface.comment
+        comment: iface.comment,
+        disabled: iface.disabled || false
       };
     });
   };
@@ -104,6 +151,7 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
               <th className="text-xs text-slate-400 font-semibold p-2">RX</th>
               <th className="text-xs text-slate-400 font-semibold p-2">TX</th>
               <th className="text-xs text-slate-400 font-semibold p-2">Comment</th>
+              <th className="text-xs text-slate-400 font-semibold p-2">Enable/Disable</th>
             </tr>
           </thead>
           <tbody>
@@ -123,11 +171,26 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
                   <td className="text-slate-300 text-xs p-2">{formatBytes(iface.rxBytes || 0)}</td>
                   <td className="text-slate-300 text-xs p-2">{formatBytes(iface.txBytes || 0)}</td>
                   <td className="text-slate-300 text-xs p-2 max-w-[200px] truncate">{iface.comment || '-'}</td>
+                  <td className="text-slate-300 text-xs p-2">
+                    <div className="flex items-center justify-center">
+                      <Switch
+                        checked={!iface.disabled}
+                        onCheckedChange={(checked) => {
+                          toggleInterfaceMutation.mutate({
+                            interfaceId: iface.id,
+                            enable: checked
+                          });
+                        }}
+                        disabled={toggleInterfaceMutation.isPending}
+                        className="data-[state=checked]:bg-green-500"
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="text-center p-4 text-slate-400">
+                <td colSpan={10} className="text-center p-4 text-slate-400">
                   Không có interfaces nào được tìm thấy
                 </td>
               </tr>

@@ -251,6 +251,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Toggle interface status (enable/disable)
+  router.post("/interfaces/:id/toggle", async (req: Request, res: Response) => {
+    try {
+      const interfaceId = parseInt(req.params.id);
+      const { deviceId, enable } = req.body;
+      
+      if (!deviceId) {
+        return res.status(400).json({ message: "Thiếu thông tin thiết bị" });
+      }
+      
+      // Lấy thông tin thiết bị
+      const device = await storage.getDevice(deviceId);
+      if (!device) {
+        return res.status(404).json({ message: "Không tìm thấy thiết bị" });
+      }
+      
+      // Lấy thông tin interface
+      const iface = await storage.getInterface(interfaceId);
+      if (!iface) {
+        return res.status(404).json({ message: "Không tìm thấy interface" });
+      }
+      
+      // Gọi Mikrotik service để thay đổi trạng thái interface
+      const result = await mikrotikService.toggleInterface(deviceId, interfaceId, enable);
+      
+      if (!result.success) {
+        return res.status(500).json({ 
+          message: `Không thể ${enable ? 'bật' : 'tắt'} interface: ${result.message}` 
+        });
+      }
+      
+      // Cập nhật trạng thái interface trong database
+      await storage.updateInterface(interfaceId, { disabled: !enable });
+      
+      res.json({
+        success: true, 
+        message: `Interface ${iface.name} đã được ${enable ? 'bật' : 'tắt'} thành công`
+      });
+    } catch (error) {
+      console.error("Lỗi khi thay đổi trạng thái interface:", error);
+      res.status(500).json({ 
+        message: `Lỗi khi thay đổi trạng thái interface: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
+  });
+
   // Get interface health score
   router.get("/interfaces/:id/health", async (req: Request, res: Response) => {
     try {
@@ -276,6 +322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to calculate interface health" });
     }
   });
+  
+
   
   // Wireless Interface routes
   router.get("/devices/:id/wireless", async (req: Request, res: Response) => {

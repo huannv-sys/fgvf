@@ -320,6 +320,90 @@ export class MikrotikService {
   }
   
   /**
+   * Thay đổi trạng thái (bật/tắt) của một interface trên thiết bị MikroTik
+   * @param deviceId ID của thiết bị MikroTik
+   * @param interfaceId ID của interface trong cơ sở dữ liệu
+   * @param enable true để bật interface, false để tắt
+   * @returns Kết quả của hoạt động
+   */
+  async toggleInterface(deviceId: number, interfaceId: number, enable: boolean): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      // Lấy thông tin về interface từ cơ sở dữ liệu
+      const interfaceInfo = await storage.getInterface(interfaceId);
+      
+      if (!interfaceInfo) {
+        return {
+          success: false,
+          message: `Interface với ID ${interfaceId} không tồn tại`
+        };
+      }
+      
+      // Kiểm tra xem interface có thuộc thiết bị này không
+      if (interfaceInfo.deviceId !== deviceId) {
+        return {
+          success: false,
+          message: `Interface không thuộc về thiết bị ID ${deviceId}`
+        };
+      }
+      
+      // Lấy client đã kết nối
+      const client = this.clients.get(deviceId);
+      if (!client) {
+        await this.connectToDevice(deviceId);
+        
+        // Kiểm tra lại sau khi thử kết nối
+        const reconnectedClient = this.clients.get(deviceId);
+        if (!reconnectedClient) {
+          return {
+            success: false,
+            message: `Không thể kết nối đến thiết bị ID: ${deviceId}`
+          };
+        }
+      }
+      
+      // Sử dụng client đã cập nhật
+      const currentClient = this.clients.get(deviceId);
+      if (!currentClient) {
+        return {
+          success: false,
+          message: `Không thể kết nối đến thiết bị ID: ${deviceId}`
+        };
+      }
+      
+      // Thực hiện lệnh kích hoạt/vô hiệu hóa interface
+      const command = enable ? '/interface/enable' : '/interface/disable';
+      const result = await currentClient.executeCommand(command, [
+        { '.id': interfaceInfo.name }
+      ]);
+      
+      // Cập nhật trạng thái trong cơ sở dữ liệu
+      await storage.updateInterface(interfaceId, {
+        disabled: !enable,
+        lastUpdated: new Date()
+      });
+      
+      // Force refresh thông tin interface sau 1 giây để đảm bảo trạng thái được cập nhật
+      setTimeout(() => {
+        this.collectInterfaceStats(deviceId).catch(err => {
+          console.error(`Error refreshing interface stats after toggle: ${err}`);
+        });
+      }, 1000);
+      
+      return {
+        success: true,
+        message: `Interface ${interfaceInfo.name} đã được ${enable ? 'bật' : 'tắt'} thành công`,
+        data: result
+      };
+    } catch (error) {
+      console.error(`Error toggling interface status: ${error}`);
+      return {
+        success: false,
+        message: `Lỗi khi ${enable ? 'bật' : 'tắt'} interface: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
    * Kiểm tra xem thiết bị MikroTik có trực tuyến hay không bằng cách thử kết nối TCP đến các cổng phổ biến
    * @param ipAddress Địa chỉ IP của thiết bị
    * @returns True nếu thiết bị trực tuyến, ngược lại là False
