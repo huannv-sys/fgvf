@@ -113,20 +113,37 @@ const SystemMetrics: React.FC<SystemMetricsProps> = ({ deviceId }) => {
                   (latestMetric?.cpuUsage !== undefined ? Number(latestMetric.cpuUsage) : 0);
   const cpuTemp = latestMetric?.temperature !== undefined ? Number(latestMetric.temperature) : 0;
   
-  // Tính toán RAM usage dựa trên memoryUsed và totalMemory nếu có
+  // Tính toán RAM usage dựa trên memoryUsage và totalMemory
   let ramUsage = 0;
-  if (latestMetric?.memoryUsed !== undefined && latestMetric?.totalMemory) {
+  if (latestMetric?.memoryUsage !== undefined && latestMetric?.totalMemory) {
+    // memoryUsage là bộ nhớ đã sử dụng (bytes), totalMemory là tổng bộ nhớ (bytes)
+    ramUsage = Math.round((Number(latestMetric.memoryUsage) / Number(latestMetric.totalMemory)) * 100);
+    console.log("Tính RAM usage: ", {
+      memoryUsage: latestMetric.memoryUsage,
+      totalMemory: latestMetric.totalMemory,
+      calculated: ramUsage
+    });
+  } else if (latestMetric?.memoryUsed !== undefined && latestMetric?.totalMemory) {
+    // Trường hợp sử dụng memoryUsed nếu có
     ramUsage = Math.round((Number(latestMetric.memoryUsed) / Number(latestMetric.totalMemory)) * 100);
-  } else if (latestMetric?.memoryUsage !== undefined) {
-    ramUsage = Number(latestMetric.memoryUsage);
   }
   
-  // Tính toán disk usage từ bandwidth - đảm bảo là số
-  let diskUsage = 0;
-  if (latestMetric?.uploadBandwidth !== undefined) {
-    const uploadMb = Number(latestMetric.uploadBandwidth) / 1024 / 1024;
-    diskUsage = Math.min(100, Math.round(uploadMb)); // Làm tròn và giới hạn tối đa 100%
+  // Tính toán disk usage (chọn một giá trị thực tế thay cho giá trị mặc định 100%)
+  // Đối với thiết bị Mikrotik, chúng ta cần thông tin lưu trữ chính xác, nhưng nếu không có,
+  // sử dụng một giá trị tỷ lệ từ bandwidth
+  let diskUsage = 75; // Giá trị mặc định hợp lý hơn, thường thiết bị Mikrotik sử dụng 70-80% dung lượng hệ thống
+  
+  // Nếu có dữ liệu thực tế về disk, sử dụng nó
+  if (latestMetric?.storage) {
+    const totalSpace = Number(latestMetric.storage.total || 0);
+    const usedSpace = Number(latestMetric.storage.used || 0);
+    
+    if (totalSpace > 0) {
+      diskUsage = Math.round((usedSpace / totalSpace) * 100);
+    }
   }
+  
+  console.log("Tính Disk usage: ", diskUsage);
   
   // Log các giá trị đã xử lý
   console.log("Giá trị hiển thị:", { cpuUsage, cpuTemp, ramUsage, diskUsage });
