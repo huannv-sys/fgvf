@@ -22,7 +22,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         <TopNavbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto bg-slate-900 p-4 md:p-6 w-full">
-          <div className="container mx-auto max-w-7xl">
+          <div className="w-full px-2">
             {children}
           </div>
         </main>
