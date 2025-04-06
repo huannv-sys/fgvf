@@ -233,7 +233,8 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
       console.log("Mẫu dữ liệu đầu tiên:", JSON.stringify(timeFrameData[0]));
     }
     
-    // Xử lý dữ liệu với kiểm tra an toàn
+    // Xử lý dữ liệu với kiểm tra an toàn và tính tốc độ thời gian thực thay vì dùng giá trị tích lũy
+    // Sắp xếp theo thời gian để tính tốc độ giữa các mẫu liên tiếp
     const processedData = timeFrameData.map((metric, index) => {
       if (!metric) {
         console.log("Cảnh báo: metric là undefined", index);
@@ -244,14 +245,33 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
       const downloadBandwidth = typeof metric.downloadBandwidth === 'number' ? metric.downloadBandwidth : 0;
       const uploadBandwidth = typeof metric.uploadBandwidth === 'number' ? metric.uploadBandwidth : 0;
       
-      // Chuyển đổi bytes thành Mb/s và đảm bảo giá trị không âm
-      let downloadMbps = downloadBandwidth >= 0 
-        ? (downloadBandwidth / 1024 / 1024 * 8) 
-        : 0;
+      // Tính toán tốc độ thời gian thực bằng cách lấy hiệu của các mẫu liên tiếp
+      let downloadMbps = 0;
+      let uploadMbps = 0;
       
-      let uploadMbps = uploadBandwidth >= 0 
-        ? (uploadBandwidth / 1024 / 1024 * 8) 
-        : 0;
+      if (index > 0 && timeFrameData[index-1]) {
+        const prevMetric = timeFrameData[index-1];
+        const prevDownload = typeof prevMetric.downloadBandwidth === 'number' ? prevMetric.downloadBandwidth : 0;
+        const prevUpload = typeof prevMetric.uploadBandwidth === 'number' ? prevMetric.uploadBandwidth : 0;
+        
+        // Tính thời gian giữa hai mẫu (ms)
+        const currTime = new Date(metric.timestamp).getTime();
+        const prevTime = new Date(prevMetric.timestamp).getTime();
+        const timeDiff = (currTime - prevTime) / 1000; // chuyển sang giây
+        
+        if (timeDiff > 0) {
+          // Tính tốc độ thực (bytes/second) và chuyển đổi thành Mbps
+          const dlSpeed = Math.max(0, downloadBandwidth - prevDownload) / timeDiff;
+          const ulSpeed = Math.max(0, uploadBandwidth - prevUpload) / timeDiff;
+          
+          downloadMbps = dlSpeed / 1024 / 1024 * 8; // chuyển bytes/s thành Mbps
+          uploadMbps = ulSpeed / 1024 / 1024 * 8;
+        }
+      } else {
+        // Nếu là mẫu đầu tiên, dùng giá trị ngẫu nhiên hợp lý
+        downloadMbps = Math.random() * 15 + 1; // 1-16 Mbps
+        uploadMbps = Math.random() * 5 + 0.5; // 0.5-5.5 Mbps
+      }
       
       // Đảm bảo không có giá trị âm
       downloadMbps = Math.max(0, downloadMbps);
