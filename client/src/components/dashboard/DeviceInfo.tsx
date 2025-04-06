@@ -70,55 +70,74 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ deviceId }) => {
             </div>
           </div>
           
-          {/* Main info grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3">
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">Model</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.model || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">Serial Number</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.serialNumber || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">RouterOS Version</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.routerOsVersion || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">Firmware</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.firmware || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">CPU</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.cpu || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">Total Memory</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.totalMemory || 'Chưa có thông tin'}
-              </div>
-            </div>
-            
-            <div className="p-2 bg-slate-800 rounded">
-              <div className="text-sm text-slate-400 mb-1">Storage</div>
-              <div className="text-sm font-medium text-white overflow-hidden text-ellipsis">
-                {deviceData.storage || 'Chưa có thông tin'}
-              </div>
+          {/* Main info table - horizontal layout */}
+          <div className="p-3">
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-transparent">
+                <tbody>
+                  <tr>
+                    {/* Hiển thị tất cả thông tin trong một hàng ngang */}
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">Model</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.model || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">Serial Number</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.serialNumber || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">RouterOS</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.routerOsVersion || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">Firmware</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.firmware || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">CPU</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.cpu || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">Memory</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.totalMemory 
+                            ? `${Math.round(parseInt(deviceData.totalMemory as string) / (1024*1024))} MB` 
+                            : 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="bg-slate-800 rounded p-2 h-full">
+                        <div className="text-sm text-slate-400 mb-1">Storage</div>
+                        <div className="text-sm font-medium text-white">
+                          {deviceData.storage || 'Chưa có thông tin'}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

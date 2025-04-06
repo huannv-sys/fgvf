@@ -136,7 +136,7 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
       
       console.log("Log analysis response:", response.data);
       setLogAnalysisData(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing traffic logs:", error);
       setLogAnalysisError(
         error.response?.data?.message || 
@@ -894,62 +894,70 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
               </CardContent>
             </Card>
 
-            {/* Detailed Traffic Statistics Table */}
+            {/* Detailed Traffic Statistics Table - Horizontal layout */}
             <Card className="border-none bg-slate-950">
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-sm font-medium">Detailed Traffic Statistics</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="bg-slate-900 rounded-md overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-transparent text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-800">
+                        <th className="py-2 px-3 text-gray-400 text-left">Metric</th>
+                        <th className="py-2 px-3 text-gray-400 text-left">TX (Upload)</th>
+                        <th className="py-2 px-3 text-gray-400 text-left">RX (Download)</th>
+                        <th className="py-2 px-3 text-gray-400 text-left">Total/Ratio</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400 w-1/3">Tx/Rx Rate:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Rate</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{formatMbps(stats.txRate, 1)}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{formatMbps(stats.rxRate, 1)}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{formatMbps(stats.txRate + stats.rxRate, 1)}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">Tx/Rx Packet Rate:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Packet Rate</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{formatPacketRate(stats.txPacketRate)}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{formatPacketRate(stats.rxPacketRate)}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{formatPacketRate(stats.txPacketRate + stats.rxPacketRate)}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">FP Tx/Rx Rate:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Fast Path Rate</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{formatMbps(stats.fpTxRate, 1)}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{formatMbps(stats.fpRxRate, 1)}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{formatMbps(stats.fpTxRate + stats.fpRxRate, 1)}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">FP Tx/Rx Packet Rate:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">FP Packet Rate</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{formatPacketRate(stats.fpTxPacketRate)}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{formatPacketRate(stats.fpRxPacketRate)}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{formatPacketRate(stats.fpTxPacketRate + stats.fpRxPacketRate)}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">Tx/Rx Bytes:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Total Bytes</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{formatBytes(stats.txBytes)}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{formatBytes(stats.rxBytes)}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{formatBytes(stats.txBytes + stats.rxBytes)}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">Tx/Rx Packets:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Total Packets</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{stats.txPackets.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{stats.rxPackets.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{(stats.txPackets + stats.rxPackets).toLocaleString()}</td>
                       </tr>
                       <tr className="border-b border-gray-800">
-                        <td className="py-2 px-3 text-gray-400">Tx/Rx Drops:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Drops</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{stats.txDrops.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{stats.rxDrops.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{(stats.txDrops + stats.rxDrops).toLocaleString()}</td>
                       </tr>
                       <tr>
-                        <td className="py-2 px-3 text-gray-400">Tx/Rx Errors:</td>
+                        <td className="py-2 px-3 text-gray-300 font-medium">Errors</td>
                         <td className="py-2 px-3 text-orange-400 font-mono">{stats.txErrors.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-gray-500">/</td>
                         <td className="py-2 px-3 text-green-400 font-mono">{stats.rxErrors.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-blue-400 font-mono">{(stats.txErrors + stats.rxErrors).toLocaleString()}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -957,31 +965,61 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
               </CardContent>
             </Card>
 
-            {/* Traffic Statistics */}
+            {/* Traffic Statistics - Horizontal Layout */}
             <Card className="border-none bg-slate-950">
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-sm font-medium">Session Statistics</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-slate-900 rounded-md p-3">
-                    <div className="text-xs text-gray-400 mb-1">Downloaded</div>
-                    <div className="text-green-400 font-mono font-medium">
-                      {totalBandwidth.download.toFixed(2)} GB
-                    </div>
-                  </div>
-                  <div className="bg-slate-900 rounded-md p-3">
-                    <div className="text-xs text-gray-400 mb-1">Uploaded</div>
-                    <div className="text-orange-400 font-mono font-medium">
-                      {totalBandwidth.upload.toFixed(2)} GB
-                    </div>
-                  </div>
-                  <div className="bg-slate-900 rounded-md p-3">
-                    <div className="text-xs text-gray-400 mb-1">Total</div>
-                    <div className="text-blue-400 font-mono font-medium">
-                      {(totalBandwidth.total || 0).toFixed(2)} GB
-                    </div>
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-transparent">
+                    <tbody>
+                      <tr>
+                        <td className="p-2">
+                          <div className="bg-slate-900 rounded-md p-3 h-full">
+                            <div className="text-xs text-gray-400 mb-1">Downloaded</div>
+                            <div className="text-green-400 font-mono font-medium">
+                              {totalBandwidth.download.toFixed(2)} GB
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="bg-slate-900 rounded-md p-3 h-full">
+                            <div className="text-xs text-gray-400 mb-1">Uploaded</div>
+                            <div className="text-orange-400 font-mono font-medium">
+                              {totalBandwidth.upload.toFixed(2)} GB
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="bg-slate-900 rounded-md p-3 h-full">
+                            <div className="text-xs text-gray-400 mb-1">Total</div>
+                            <div className="text-blue-400 font-mono font-medium">
+                              {(totalBandwidth.total || 0).toFixed(2)} GB
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="bg-slate-900 rounded-md p-3 h-full">
+                            <div className="text-xs text-gray-400 mb-1">Average Rate</div>
+                            <div className="text-purple-400 font-mono font-medium">
+                              {formatMbps((totalBandwidth.total * 1024) / 24, 1)}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="bg-slate-900 rounded-md p-3 h-full">
+                            <div className="text-xs text-gray-400 mb-1">DL/UL Ratio</div>
+                            <div className="text-yellow-400 font-mono font-medium">
+                              {totalBandwidth.upload > 0 
+                                ? (totalBandwidth.download / totalBandwidth.upload).toFixed(1)
+                                : "N/A"}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
@@ -996,9 +1034,9 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
                   <div className="flex items-center justify-between bg-slate-900 rounded-md p-3">
                     <div className="text-sm">Bandwidth Utilization</div>
                     <Badge 
-                      variant={currentStats.traffic > 15 ? "destructive" : currentStats.traffic > 10 ? "default" : "secondary"}
+                      variant={Number(currentStats.traffic) > 15 ? "danger" : Number(currentStats.traffic) > 10 ? "default" : "secondary"}
                     >
-                      {currentStats.traffic > 15 ? "High" : currentStats.traffic > 10 ? "Medium" : "Low"}
+                      {Number(currentStats.traffic) > 15 ? "High" : Number(currentStats.traffic) > 10 ? "Medium" : "Low"}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between bg-slate-900 rounded-md p-3">
@@ -1013,16 +1051,16 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
                     <div className="text-sm">Network Quality</div>
                     <Badge 
                       variant={
-                        currentStats.traffic < 5 
-                          ? "destructive" 
-                          : currentStats.traffic < 10 
+                        Number(currentStats.traffic) < 5 
+                          ? "danger" 
+                          : Number(currentStats.traffic) < 10 
                           ? "default" 
                           : "secondary"
                       }
                     >
-                      {currentStats.traffic < 5 
+                      {Number(currentStats.traffic) < 5 
                         ? "Poor" 
-                        : currentStats.traffic < 10 
+                        : Number(currentStats.traffic) < 10 
                         ? "Good" 
                         : "Excellent"}
                     </Badge>
