@@ -129,7 +129,7 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
   };
 
   return (
-    <div className="bg-slate-900 rounded-lg shadow-md border border-slate-700">
+    <div className="bg-slate-900 rounded-lg shadow-md border border-slate-700 w-full">
       <div className="px-4 py-3 border-b border-slate-700 bg-slate-800 flex items-center justify-between">
         <h3 className="font-medium text-white text-lg">Network Interfaces</h3>
         <div className="flex items-center">
@@ -138,8 +138,8 @@ const InterfaceTable: React.FC<InterfaceTableProps> = ({ deviceId }) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left table-fixed">
           <thead className="bg-slate-800 border-b border-slate-700">
             <tr>
               <th className="text-xs text-slate-400 font-semibold p-2">Type</th>

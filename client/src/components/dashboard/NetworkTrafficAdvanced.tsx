@@ -88,7 +88,7 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   } = useQuery<Metric[]>({ 
     queryKey: [metricsEndpoint],
     enabled: !!deviceId,
-    refetchInterval: autoRefresh ? 3000 : false, // Auto refresh if enabled
+    refetchInterval: autoRefresh ? 1000 : false, // Auto refresh mỗi giây để tạo hiệu ứng cập nhật thời gian thực
     retry: 3, // Thử lại 3 lần nếu thất bại
     staleTime: 5000 // Dữ liệu cũ sau 5 giây
   });
@@ -102,7 +102,7 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   } = useQuery<Interface[]>({
     queryKey: [interfacesEndpoint],
     enabled: !!deviceId,
-    refetchInterval: autoRefresh ? 5000 : false
+    refetchInterval: autoRefresh ? 1000 : false // Cập nhật mỗi giây để tạo hiệu ứng thời gian thực
   });
   
   // Function to perform traffic log analysis
@@ -489,7 +489,7 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
       const intervalId = setInterval(() => {
         console.log("Tự động cập nhật phân tích lưu lượng...");
         analyzeTrafficLogs();
-      }, 30000); // 30 giây
+      }, 5000); // Cập nhật mỗi 5 giây để tạo hiệu ứng thời gian thực cho phân tích
       
       // Xóa interval khi component unmount hoặc tab thay đổi
       return () => clearInterval(intervalId);
@@ -1075,7 +1075,7 @@ const NetworkTrafficAdvanced: React.FC<NetworkTrafficAdvancedProps> = ({ deviceI
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg shadow-md">
+    <div className="bg-gray-900 rounded-lg shadow-md w-full">
       <div className="p-3 border-b border-gray-800 flex justify-between items-center">
         <h3 className="text-sm font-medium text-gray-200">Network Traffic Advanced</h3>
         <div className="inline-flex h-8 items-center justify-center rounded-md bg-gray-800 p-1 text-gray-400">
