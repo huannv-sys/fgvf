@@ -363,12 +363,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       let capsmanAPs = await capsmanService.getCapsmanAPs(deviceId);
+      console.log(`Tìm thấy ${capsmanAPs.length} CAPsMan APs trong cơ sở dữ liệu cho thiết bị ${deviceId}`);
+      
+      // Nếu không có AP trong database nhưng thiết bị hỗ trợ CAPsMan,
+      // thực hiện thu thập dữ liệu 
+      if (capsmanAPs.length === 0) {
+        console.log(`Không có AP nào, bắt đầu thu thập dữ liệu CAPsMAN cho thiết bị ${deviceId}...`);
+        try {
+          await capsmanService.collectCapsmanStats(deviceId);
+          // Lấy lại dữ liệu sau khi thu thập
+          capsmanAPs = await capsmanService.getCapsmanAPs(deviceId);
+          console.log(`Đã thu thập và tìm thấy ${capsmanAPs.length} CAPsMan APs`);
+        } catch (collectError) {
+          console.error(`Lỗi khi thu thập thông tin CAPsMAN:`, collectError);
+        }
+      }
       
       // Trả về dữ liệu CAPsMAN APs thực tế - không tạo dữ liệu mẫu
       res.json(capsmanAPs || []);
     } catch (error) {
       console.error("Lỗi khi lấy CAPsMAN APs:", error);
       res.status(500).json({ message: "Failed to fetch CAPsMAN APs" });
+    }
+  });
+  
+  // Endpoint mới để làm mới dữ liệu CAPsMan
+  router.post("/devices/:id/refresh-capsman", async (req: Request, res: Response) => {
+    try {
+      const deviceId = parseInt(req.params.id);
+      const device = await storage.getDevice(deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      if (!device.hasCAPsMAN) {
+        return res.status(400).json({ message: "Device does not support CAPsMAN" });
+      }
+      
+      console.log(`Bắt đầu làm mới dữ liệu CAPsMAN cho thiết bị ${deviceId}...`);
+      await capsmanService.collectCapsmanStats(deviceId);
+      
+      const capsmanAPs = await capsmanService.getCapsmanAPs(deviceId);
+      console.log(`Đã làm mới thông tin và tìm thấy ${capsmanAPs.length} CAPsMan APs`);
+      
+      res.json({ 
+        success: true, 
+        message: `CAPsMAN data refreshed, found ${capsmanAPs.length} access points`,
+        apsCount: capsmanAPs.length
+      });
+    } catch (error) {
+      console.error("Lỗi khi làm mới dữ liệu CAPsMAN:", error);
+      res.status(500).json({ message: "Failed to refresh CAPsMAN data" });
     }
   });
   
